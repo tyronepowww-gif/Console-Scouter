@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Namekian Elder Scouter — RR standalone</title>
+<style>
+  :root {
+    --ink: #1a1a1a; --paper: #f7f7f5; --mut: #6b6b6b; --line: #e0e0dc;
+    --namek: #2e7d4f; --namek-soft: rgba(46,125,79,.10); --namek-line: rgba(46,125,79,.35);
+    --bad: #b3382e;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--paper); color: var(--ink); line-height: 1.5; }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 24px 16px 64px; }
+  header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+  h1 { font-size: 20px; font-weight: 600; }
+  .sub { font-size: 12px; color: var(--mut); }
+  .panel { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .view { position: relative; border-radius: 10px; overflow: hidden; background: #111; height: 240px; display: flex; align-items: center; justify-content: center; }
+  video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: none; }
+  .reticle { position: absolute; left: 50%; top: 42%; width: 120px; height: 120px; transform: translate(-50%,-50%); border: 1.5px solid rgba(120,220,160,.8); border-radius: 50%; display: none; }
+  .reticle::after { content:""; position:absolute; inset: 32px; border: 1px dashed rgba(120,220,160,.45); border-radius: 50%; }
+  .scanline { position: absolute; left:0; right:0; height:2px; top:0; background: rgba(120,220,160,.55); opacity: 0; }
+  .scanning .scanline { opacity: 1; animation: sl 2.4s ease-in-out infinite; }
+  @keyframes sl { 0%{top:0} 50%{top:100%} 100%{top:0} }
+  .hudstat { position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.7); font-variant-numeric: tabular-nums; }
+  #wave { width: 100%; height: 72px; background: #0c1712; border-radius: 8px; display: none; }
+  .row { display: flex; align-items: baseline; gap: 12px; }
+  .pl { font-size: 44px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .note { font-size: 12px; color: var(--mut); }
+  .sec { font-size: 12px; font-weight: 600; color: var(--mut); letter-spacing: .02em; margin-top: 4px; }
+  .resline { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; padding: 6px 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  .resline:last-child { border-bottom: none; }
+  .resline .k { color: var(--mut); }
+  .resline .v { font-weight: 500; text-align: right; }
+  .tol { font-weight: 400; font-size: 12px; color: var(--mut); }
+  .tag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; margin-left: 6px; background: var(--namek-soft); color: var(--namek); }
+  .truebox { border: 1px solid var(--namek-line); border-radius: 10px; padding: 12px; }
+  .truebox .pl { color: var(--namek); }
+  .elder { font-size: 14px; padding: 12px; border: 1px dashed var(--line); border-radius: 10px; color: var(--mut); }
+  .elder b { color: var(--ink); font-weight: 600; }
+  .btn { font: inherit; padding: 10px 18px; border-radius: 10px; border: 1px solid var(--ink); background: var(--ink); color: #fff; cursor: pointer; font-weight: 500; }
+  .btn:disabled { opacity: .4; cursor: default; }
+  .btn.ghost { background: transparent; color: var(--ink); }
+  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  select { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: #fff; }
+  .hist { font-size: 13px; color: var(--mut); }
+  .histline { display:flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  footer { font-size: 12px; color: var(--mut); margin-top: 16px; line-height: 1.6; }
+  .flicker { animation: fl .12s steps(2) 8; }
+  @keyframes fl { 50% { opacity: .2; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Namekian elder scouter</h1>
+    <div class="sub" id="mode">at rest</div>
+  </header>
+
+  <div class="panel">
+    <div class="view" id="view">
+      <video id="cam" autoplay muted playsinline></video>
+      <div class="reticle" id="reticle"></div>
+      <div class="scanline"></div>
+      <div class="hudstat" id="hudstat">the lens waits</div>
+    </div>
+    <canvas id="wave" width="600" height="72"></canvas>
+
+    <div class="row">
+      <div class="pl" id="pl">—</div>
+      <div class="note" id="plnote">unmeasured</div>
+    </div>
+
+    <div id="results"></div>
+    <div id="truebox"></div>
+    <div id="elder"></div>
+
+    <div class="controls">
+      <button class="btn" id="go">Commune with the lens</button>
+      <select id="dur">
+        <option value="12">12 s — quick</option>
+        <option value="20" selected>20 s — standard</option>
+        <option value="30">30 s — elder's choice</option>
+      </select>
+      <button class="btn ghost" id="historyBtn">History</button>
+    </div>
+
+    <div class="hist" id="history" style="display:none;"></div>
+  </div>
+
+  <footer>
+    Calibration: farmer with shotgun = 5 · average adult ≈ 35–40 · Goku's debut = 416.
+    Composite = 2 + cardio (max 25) + composure (max 20) + discipline (max 20).
+    Anomalies are reconciled, never discarded: true = base × (1 + ln(1 + excess)) + excess.
+    Longer scans give stabler beats; stillness and side-light matter more than the lens.
+  </footer>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var video = $("cam"), view = $("view"), wave = $("wave"), wctx = wave.getContext("2d");
+  var FPS = 30, signal = [], lum = [], sampling = false;
+
+  function hud(t){ $("hudstat").textContent = t; }
+  function line(k, v, tol, tag){
+    var d = document.createElement("div"); d.className = "resline";
+    d.innerHTML = '<span class="k">' + k + '</span><span class="v">' + v +
+      (tol ? ' <span class="tol">± ' + tol + '</span>' : '') +
+      (tag ? ' <span class="tag">' + tag + '</span>' : '') + '</span>';
+    return d;
+  }
+  function elderSay(t){
+    $("elder").innerHTML = "<b>The elder observes:</b> " + t;
+  }
+
+  $("go").addEventListener("click", function(){
+    $("results").innerHTML = ""; $("truebox").innerHTML = ""; $("elder").innerHTML = "";
+    $("pl").textContent = "—"; $("pl").style.color = ""; $("pl").classList.remove("flicker");
+    $("plnote").textContent = "reaching out…"; $("plnote").style.color = "";
+    if (sampling) return;
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+      $("mode").textContent = "silence";
+      $("plnote").textContent = "no optical thread (serve over http or https)";
+      elderSay("No lens, no matter. A quiet room is also a reading.");
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 } }, audio: false })
+      .then(function(s){
+        video.srcObject = s;
+        video.style.display = "block";
+        $("reticle").style.display = "block";
+        $("wave").style.display = "block";
+        $("mode").textContent = "communion open";
+        startSample();
+      })
+      .catch(function(){
+        $("mode").textContent = "silence";
+        $("plnote").textContent = "the mirror was declined";
+        elderSay("The lens was refused. Boundaries are respected here.");
+      });
+  });
+
+  var off = document.createElement("canvas");
+  off.width = 128; off.height = 128;
+  var octx = off.getContext("2d", { willReadFrequently: true });
+
+  function drawWave(){
+    wctx.fillStyle = "#0c1712"; wctx.fillRect(0, 0, wave.width, wave.height);
+    var n = signal.length; if (n < 2) return;
+    var viewN = Math.min(n, FPS * 8);
+    var seg = signal.slice(n - viewN);
+    var mn = Math.min.apply(null, seg), mx = Math.max.apply(null, seg);
+    var rng = Math.max(1e-6, mx - mn);
+    wctx.strokeStyle = "#7adca0"; wctx.lineWidth = 1.5; wctx.beginPath();
+    for (var i = 0; i < viewN; i++) {
+      var x = i / (viewN - 1) * wave.width;
+      var y = 8 + (1 - (seg[i] - mn) / rng) * (wave.height - 16);
+      i ? wctx.lineTo(x, y) : wctx.moveTo(x, y);
+    }
+    wctx.stroke();
+  }
+
+  function startSample(){
+    var durS = parseInt($("dur").value, 10);
+    var total = durS * FPS;
+    signal = []; lum = []; sampling = true;
+    view.classList.add("scanning");
+    $("go").disabled = true;
+    hud("listening to the small drum — hold still…");
+
+    var tick = 0;
+    var iv = setInterval(function(){
+      try { octx.drawImage(video, 0, 0, 128, 128); } catch(e) { clearInterval(iv); sampling = false; fail(); return; }
+      var d = octx.getImageData(0, 0, 128, 128).data;
+      var g = 0, l = 0, cnt = 0, fg = 0;
+      for (var y = 0; y < 128; y++) for (var x = 0; x < 128; x++) {
+        var i = (y * 128 + x) * 4;
+        l += 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2]; cnt++;
+        if (y >= 16 && y <= 52 && x >= 44 && x <= 84) { g += d[i+1]; fg++; }
+      }
+      signal.push(fg ? g / fg : 0);
+      lum.push(cnt ? l / cnt : 0);
+      tick++;
+      drawWave();
+      if (tick === Math.floor(total / 3)) hud("counting the spaces between beats…");
+      if (tick >= total) { clearInterval(iv); sampling = false; analyze(); }
+    }, 1000 / FPS);
+
+    function fail(){
+      view.classList.remove("scanning");
+      $("mode").textContent = "silence";
+      $("plnote").textContent = "the thread frayed";
+      elderSay("Interrupted. All things end mid-sentence sometimes.");
+      $("go").disabled = false;
+    }
+  }
+
+  function analyze(){
+    view.classList.remove("scanning");
+    var n = signal.length;
+    var mean = signal.reduce(function(a,b){return a+b;},0) / n;
+    var dev = signal.map(function(v){ return v - mean; });
+    var W = FPS; // 1 s detrend window
+    var ma = dev.map(function(_, k){
+      var s = 0, c = 0;
+      for (var j = Math.max(0, k - W); j <= Math.min(n - 1, k + W); j++) { s += dev[j]; c++; }
+      return dev[k] - s / c;
+    });
+    // std for prominence
+    var m2 = ma.reduce(function(a,b){return a+b;},0) / n;
+    var sd = Math.sqrt(ma.reduce(function(a,b){return a + (b - m2)*(b - m2);},0) / n);
+
+    var refractory = Math.floor(FPS * 0.3);
+    var peaks = [];
+    for (var i = 2; i < n - 2; i++) {
+      if (ma[i] > sd * 0.6 && ma[i] >= ma[i-1] && ma[i] >= ma[i+1] && ma[i] > ma[i-2] && ma[i] >= ma[i+2]) {
+        if (!peaks.length || (i - peaks[peaks.length - 1]) >= refractory) peaks.push(i);
+      }
+    }
+    var motion = 0;
+    for (var q = 1; q < lum.length; q++) motion += Math.abs(lum[q] - lum[q-1]);
+    motion /= (lum.length - 1);
+
+    var noBeats = peaks.length < Math.max(4, durFloor(n));
+    var ibi = [];
+    if (!noBeats) for (var p = 1; p < peaks.length; p++) ibi.push((peaks[p] - peaks[p-1]) * (1000 / FPS));
+
+    var bpm = null, rmssd = null;
+    if (ibi.length >= 3) {
+      var sorted = ibi.slice().sort(function(a,b){return a-b;});
+      var med = sorted[Math.floor(sorted.length / 2)];
+      ibi = ibi.filter(function(v){ return Math.abs(v - med) < med * 0.35; }); // median filter, ±35%
+    }
+    if (ibi.length >= 3) {
+      bpm = Math.round(60000 / (ibi.reduce(function(a,b){return a+b;},0) / ibi.length));
+      var sq = 0;
+      for (var r = 1; r < ibi.length; r++) sq += Math.pow(ibi[r] - ibi[r-1], 2);
+      rmssd = Math.round(Math.sqrt(sq / (ibi.length - 1)));
+    }
+
+    var bpmExcess = bpm !== null && bpm > 180 ? bpm - 180 : (bpm !== null && bpm < 40 ? 40 - bpm : 0);
+    var hrvExcess = rmssd !== null && rmssd >= 300 ? rmssd - 300 : 0;
+    var noBeatExcess = noBeats ? 120 : 0;
+    var anomalous = noBeats || bpmExcess > 0 || hrvExcess > 0;
+
+    var cardio = bpm ? Math.round(Math.max(2, Math.min(25, (120 - bpm) * 0.35))) : 0;
+    var composure = rmssd ? Math.max(0, Math.min(20, Math.round(rmssd / 8))) : 0;
+    var discipline = Math.max(0, Math.min(20, Math.round(20 - motion * 1.5)));
+    var base = 2 + cardio + composure + discipline;
+
+    var r = $("results");
+    var s1 = document.createElement("div"); s1.className = "sec"; s1.textContent = "What the lens heard"; r.appendChild(s1);
+    if (noBeats) {
+      r.appendChild(line("pulse", "whispered, not spoken", null, "scale too small"));
+      r.appendChild(line("beat spacing", "whispered, not spoken", null, "scale too small"));
+    } else {
+      r.appendChild(line("pulse", bpm + " bpm", "4", bpmExcess ? "beyond the chart" : null));
+      r.appendChild(line("beat spacing (RMSSD)", rmssd + " ms", "15%", hrvExcess ? "beyond the chart" : null));
+    }
+    r.appendChild(line("stillness of body", motion.toFixed(1), "0.5"));
+    var s2 = document.createElement("div"); s2.className = "sec"; s2.textContent = "Instrument sum (mortal scale)"; r.appendChild(s2);
+    r.appendChild(line("cardio term", noBeats ? "held at 0" : "+" + cardio, null, noBeats ? "reconciled below" : null));
+    r.appendChild(line("composure term", noBeats ? "held at 0" : "+" + composure, null, noBeats ? "reconciled below" : null));
+    r.appendChild(line("discipline term", "+" + discipline));
+    r.appendChild(line("breath of the planet", "+2"));
+
+    hud("the drum speaks");
+    countUp($("pl"), base, function(){
+      $("plnote").textContent = anomalous ? "scale strained — reconciling" : "within the mortal band";
+
+      if (anomalous) {
+        var excess = bpmExcess + hrvExcess + noBeatExcess;
+        var amp = 1 + Math.log(1 + excess);
+        var trueNum = Math.min(2000000, Math.round(base * amp + excess));
+        var inputs = [bpmExcess ? "bpm excess " + bpmExcess : null, hrvExcess ? "hrv excess " + hrvExcess : null, noBeatExcess ? "unresolved drum (est. 120)" : null].filter(Boolean).join(" · ");
+        var tb = $("truebox"); tb.className = "truebox";
+        tb.innerHTML = '<div class="sec" style="margin-top:0;">True reading — anomaly reconciled</div>' +
+          '<div class="row"><div class="pl" id="truepl">0</div><div class="note">' + base + ' × (1 + ln(1 + ' + excess + ')) + ' + excess + '</div></div>' +
+          '<div class="note" style="margin-top:4px;">Inputs: ' + inputs + '</div>';
+        countUp($("truepl"), trueNum, function(){
+          elderSay("The chart was never the ceiling — only the paper. This one carries " + trueNum.toLocaleString() + " and does not tremble.");
+        });
+        saveHist(base, trueNum, bpm, rmssd);
+      } else {
+        elderSay(base >= 60
+          ? "Strong, and steady with it. The quiet strength outlasts the loud."
+          : "A gentle reading. Small drums have carried entire villages through long nights.");
+        saveHist(base, base, bpm, rmssd);
+      }
+      $("go").disabled = false;
+      $("go").textContent = "Commune again";
+      $("mode").textContent = "at rest";
+    });
+
+    function durFloor(nSamples){ return Math.floor(nSamples / FPS / 4); }
+  }
+
+  function countUp(el, target, done){
+    var t0 = performance.now(), dur = 1000;
+    function step(t){
+      var p = Math.min(1, (t - t0) / dur);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) requestAnimationFrame(step); else if (done) done();
+    }
+    requestAnimationFrame(step);
+  }
+
+  function saveHist(base, tru, bpm, rmssd){
+    try {
+      var h = JSON.parse(localStorage.getItem("scouter_history") || "[]");
+      h.push({ t: Date.now(), base: base, true: tru, bpm: bpm, rmssd: rmssd });
+      localStorage.setItem("scouter_history", JSON.stringify(h.slice(-50)));
+    } catch(e) {}
+  }
+
+  $("historyBtn").addEventListener("click", function(){
+    var el = $("history");
+    if (el.style.display === "block") { el.style.display = "none"; return; }
+    var h = [];
+    try { h = JSON.parse(localStorage.getItem("scouter_history") || "[]"); } catch(e) {}
+    el.innerHTML = '<div class="sec" style="margin-top:8px;">Gero mode — longitudinal record</div>';
+    if (!h.length) { el.innerHTML += '<div style="padding:8px 0;">No scans yet. The profile begins with the first reading.</div>'; }
+    h.slice(-10).reverse().forEach(function(s){
+      var d = new Date(s.t);
+      var row = document.createElement("div"); row.className = "histline";
+      row.innerHTML = "<span>" + d.toLocaleString() + "</span><span>base " + s.base + (s.true !== s.base ? " · true " + s.true : "") + (s.bpm ? " · " + s.bpm + " bpm" : "") + "</span>";
+      el.appendChild(row);
+    });
+    el.style.display = "block";
+  });
+})();
+</script>
+</body>
+</html>
