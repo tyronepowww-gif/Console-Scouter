@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Namekian Elder Scouter — Fictional Local Scan</title>
+
+  <style>
+    :root {
+      --ink: #1a1a1a;
+      --paper: #f7f7f5;
+      --mut: #6b6b6b;
+      --line: #e0e0dc;
+      --namek: #2e7d4f;
+      --namek-soft: rgba(46, 125, 79, 0.10);
+      --namek-line: rgba(46, 125, 79, 0.35);
+      --bad: #b3382e;
+      --dark: #0c1712;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+    }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+    }
+
+    .wrap {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 24px 16px 64px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 650;
+    }
+
+    .sub {
+      color: var(--mut);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .privacy-panel {
+      margin-bottom: 16px;
+      padding: 14px;
+      border: 1px solid var(--namek-line);
+      border-left: 4px solid var(--namek);
+      border-radius: 12px;
+      background: var(--namek-soft);
+      color: #214630;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .privacy-panel h2 {
+      margin-bottom: 8px;
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .privacy-panel p + p {
+      margin-top: 8px;
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+    }
+
+    .view {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 240px;
+      overflow: hidden;
+      border-radius: 10px;
+      background: #111;
+    }
+
+    video {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    .reticle {
+      position: absolute;
+      top: 42%;
+      left: 50%;
+      display: none;
+      width: 120px;
+      height: 120px;
+      transform: translate(-50%, -50%);
+      border: 1.5px solid rgba(120, 220, 160, 0.8);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .reticle::after {
+      position: absolute;
+      inset: 32px;
+      border: 1px dashed rgba(120, 220, 160, 0.45);
+      border-radius: 50%;
+      content: "";
+    }
+
+    .scanline {
+      position: absolute;
+      top: 0;
+      right: 0;
+      left: 0;
+      height: 2px;
+      background: rgba(120, 220, 160, 0.55);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .scanning .scanline {
+      animation: scan-line 2.4s ease-in-out infinite;
+      opacity: 1;
+    }
+
+    @keyframes scan-line {
+      0% { top: 0; }
+      50% { top: 100%; }
+      100% { top: 0; }
+    }
+
+    .hudstat {
+      position: absolute;
+      bottom: 10px;
+      left: 12px;
+      color: #fff;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+    }
+
+    #wave {
+      display: none;
+      width: 100%;
+      height: 72px;
+      border-radius: 8px;
+      background: var(--dark);
+    }
+
+    .row {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .pl {
+      font-size: 44px;
+      font-weight: 650;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .note {
+      color: var(--mut);
+      font-size: 12px;
+    }
+
+    .sec {
+      margin-top: 4px;
+      color: var(--mut);
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+    }
+
+    .resline {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .resline:last-child {
+      border-bottom: 0;
+    }
+
+    .resline .k {
+      color: var(--mut);
+    }
+
+    .resline .v {
+      font-weight: 500;
+      text-align: right;
+    }
+
+    .tol {
+      color: var(--mut);
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    .tag {
+      margin-left: 6px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: var(--namek-soft);
+      color: var(--namek);
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .truebox {
+      padding: 12px;
+      border: 1px solid var(--namek-line);
+      border-radius: 10px;
+    }
+
+    .truebox .pl {
+      color: var(--namek);
+    }
+
+    .elder {
+      padding: 12px;
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+      color: var(--mut);
+      font-size: 14px;
+    }
+
+    .elder b {
+      color: var(--ink);
+      font-weight: 650;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      padding: 10px 18px;
+      border: 1px solid var(--ink);
+      border-radius: 10px;
+      background: var(--ink);
+      color: #fff;
+      font: inherit;
+      font-weight: 550;
+      cursor: pointer;
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
+    }
+
+    .btn.ghost {
+      background: transparent;
+      color: var(--ink);
+    }
+
+    select {
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .checkrow {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      color: var(--mut);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .checkrow input {
+      width: 16px;
+      height: 16px;
+      margin-top: 2px;
+      accent-color: var(--namek);
+      flex: 0 0 auto;
+    }
+
+    .history-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .hist {
+      display: none;
+      color: var(--mut);
+      font-size: 13px;
+    }
+
+    .histline {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--line);
+      font-variant-numeric: tabular-nums;
+    }
+
+    footer {
+      margin-top: 16px;
+      color: var(--mut);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .flicker {
+      animation: flicker 0.12s steps(2) 8;
+    }
+
+    @keyframes flicker {
+      50% { opacity: 0.2; }
+    }
+
+    @media (max-width: 460px) {
+      header {
+        display: block;
+      }
+
+      .sub {
+        margin-top: 4px;
+        text-align: left;
+      }
+
+      .resline,
+      .histline {
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .resline .v {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="wrap">
+    <header>
+      <h1>Namekian elder scouter</h1>
+      <div class="sub" id="mode">at rest</div>
+    </header>
+
+    <section class="privacy-panel" role="note" aria-label="Privacy and fictional scouter notice">
+      <h2>Your privacy and this fictional reading</h2>
+
+      <p>
+        This is a fictional, Dragon Ball-inspired scouter experience. It does not
+        measure heart rate, HRV, stress, health, fitness, medical status, or real
+        power level. Do not use it for medical, safety, exercise, or training decisions.
+      </p>
+
+      <p>
+        The camera opens only after you choose to begin a scan and approve your
+        browser's permission prompt. In this local-only version, temporary camera
+        frames are processed in your browser to generate a game-like reading. Camera
+        video, images, and audio are not uploaded, transmitted, sold, or shared.
+      </p>
+
+      <p>
+        Fictional scan history is optional and, if enabled, stays only in this
+        browser on this device until you clear it.
+      </p>
+    </section>
+
+    <section class="panel">
+      <div class="view" id="view">
+        <video id="cam" autoplay muted playsinline></video>
+        <div class="reticle" id="reticle"></div>
+        <div class="scanline"></div>
+        <div class="hudstat" id="hudstat">the lens waits</div>
+      </div>
+
+      <canvas id="wave" width="600" height="72"></canvas>
+
+      <div class="row">
+        <div class="pl" id="pl">—</div>
+        <div class="note" id="plnote">unmeasured</div>
+      </div>
+
+      <div id="results"></div>
+      <div id="truebox"></div>
+      <div id="elder"></div>
+
+      <label class="checkrow" for="cameraConsent">
+        <input type="checkbox" id="cameraConsent">
+        <span>
+          I understand this is a fictional, experimental reading. I consent to
+          temporary camera processing for this scan and will not use the output for
+          health, medical, safety, exercise, or training decisions.
+        </span>
+      </label>
+
+      <label class="checkrow" for="saveHistory">
+        <input type="checkbox" id="saveHistory">
+        <span>
+          Save fictional readings only in this browser on this device. This is
+          optional and can be cleared at any time.
+        </span>
+      </label>
+
+      <div class="controls">
+        <button class="btn" id="go" type="button" disabled>
+          Commune with the lens
+        </button>
+
+        <select id="dur" aria-label="Scan duration">
+          <option value="12">12 s — quick</option>
+          <option value="20" selected>20 s — standard</option>
+          <option value="30">30 s — elder's choice</option>
+        </select>
+
+        <button class="btn ghost" id="historyBtn" type="button">
+          History
+        </button>
+
+        <button class="btn ghost" id="clearHistoryBtn" type="button">
+          Clear History
+        </button>
+      </div>
+
+      <div class="hist" id="history"></div>
+    </section>
+
+    <footer>
+      Fictional Dragon Ball-inspired entertainment experience. The visual waveform
+      and resulting number are game-like outputs, not validated biometric or health
+      measurements. The microphone is never requested. Camera access is stopped
+      after a scan, when the page is hidden, and when you leave the page.
+    </footer>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var $ = function (id) {
+        return document.getElementById(id);
+      };
+
+      var video = $("cam");
+      var view = $("view");
+      var wave = $("wave");
+      var wctx = wave.getContext("2d");
+
+      var FPS = 30;
+      var signal = [];
+      var luminance = [];
+      var sampling = false;
+      var activeStream = null;
+      var scanInterval = null;
+
+      var cameraConsent = $("cameraConsent");
+      var saveHistory = $("saveHistory");
+      var goButton = $("go");
+      var durationSelect = $("dur");
+
+      var offscreenCanvas = document.createElement("canvas");
+      offscreenCanvas.width = 128;
+      offscreenCanvas.height = 128;
+
+      var offscreenContext = offscreenCanvas.getContext("2d", {
+        willReadFrequently: true
+      });
+
+      function setHud(text) {
+        $("hudstat").textContent = text;
+      }
+
+      function setMode(text) {
+        $("mode").textContent = text;
+      }
+
+      function setStartButtonState() {
+        goButton.disabled = !cameraConsent.checked || sampling;
+      }
+
+      function makeLine(key, value, tolerance, tag) {
+        var row = document.createElement("div");
+        var keySpan = document.createElement("span");
+        var valueSpan = document.createElement("span");
+
+        row.className = "resline";
+        keySpan.className = "k";
+        valueSpan.className = "v";
+
+        keySpan.textContent = key;
+        valueSpan.textContent = value;
+
+        if (tolerance) {
+          var toleranceSpan = document.createElement("span");
+          toleranceSpan.className = "tol";
+          toleranceSpan.textContent = " ± " + tolerance;
+          valueSpan.appendChild(toleranceSpan);
+        }
+
+        if (tag) {
+          var tagSpan = document.createElement("span");
+          tagSpan.className = "tag";
+          tagSpan.textContent = tag;
+          valueSpan.appendChild(tagSpan);
+        }
+
+        row.appendChild(keySpan);
+        row.appendChild(valueSpan);
+
+        return row;
+      }
+
+      function elderSay(text) {
+        var elder = $("elder");
+        elder.innerHTML = "";
+
+        var label = document.createElement("b");
+        label.textContent = "The elder observes: ";
+
+        elder.appendChild(label);
+        elder.appendChild(document.createTextNode(text));
+      }
+
+      function clearResults() {
+        $("results").innerHTML = "";
+        $("truebox").innerHTML = "";
+        $("elder").innerHTML = "";
+
+        $("pl").textContent = "—";
+        $("pl").style.color = "";
+        $("pl").classList.remove("flicker");
+
+        $("plnote").textContent = "reaching out…";
+        $("plnote").style.color = "";
+      }
+
+      function stopCamera() {
+        if (scanInterval !== null) {
+          clearInterval(scanInterval);
+          scanInterval = null;
+        }
+
+        if (activeStream) {
+          activeStream.getTracks().forEach(function (track) {
+            track.stop();
+          });
+
+          activeStream = null;
+        }
+
+        video.srcObject = null;
+        video.style.display = "none";
+        $("reticle").style.display = "none";
+        wave.style.display = "none";
+        view.classList.remove("scanning");
+      }
+
+      function stopAndReset(message) {
+        sampling = false;
+        stopCamera();
+        setStartButtonState();
+
+        if (message) {
+          $("plnote").textContent = message;
+        }
+      }
+
+      function drawWaveform() {
+        wctx.fillStyle = "#0c1712";
+        wctx.fillRect(0, 0, wave.width, wave.height);
+
+        var total = signal.length;
+
+        if (total < 2) {
+          return;
+        }
+
+        var viewCount = Math.min(total, FPS * 8);
+        var segment = signal.slice(total - viewCount);
+
+        var minimum = Math.min.apply(null, segment);
+        var maximum = Math.max.apply(null, segment);
+        var range = Math.max(0.000001, maximum - minimum);
+
+        wctx.strokeStyle = "#7adca0";
+        wctx.lineWidth = 1.5;
+        wctx.beginPath();
+
+        for (var index = 0; index < viewCount; index += 1) {
+          var x = (index / (viewCount - 1)) * wave.width;
+          var y = 8 + (1 - (segment[index] - minimum) / range) * (wave.height - 16);
+
+          if (index === 0) {
+            wctx.moveTo(x, y);
+          } else {
+            wctx.lineTo(x, y);
+          }
+        }
+
+        wctx.stroke();
+      }
+
+      function beginScan() {
+        if (!cameraConsent.checked || sampling) {
+          return;
+        }
+
+        clearResults();
+
+        if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+          setMode("lens unavailable");
+          $("plnote").textContent =
+            "camera access needs HTTPS, localhost, or a supported browser";
+          elderSay("The lens cannot open in this realm. No scan was performed.");
+          return;
+        }
+
+        $("plnote").textContent = "requesting temporary lens access…";
+
+        navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: "user"
+          },
+          audio: false
+        })
+          .then(function (stream) {
+            activeStream = stream;
+            video.srcObject = stream;
+            video.style.display = "block";
+            $("reticle").style.display = "block";
+            wave.style.display = "block";
+
+            setMode("fictional scan in progress");
+            startSampling();
+          })
+          .catch(function (error) {
+            stopCamera();
+            sampling = false;
+            setStartButtonState();
+
+            setMode("lens unavailable");
+
+            if (error && error.name === "NotAllowedError") {
+              $("plnote").textContent = "camera permission was declined";
+              elderSay("The lens was refused. Your boundary is respected.");
+            } else {
+              $("plnote").textContent = "camera access could not begin";
+              elderSay("The lens could not open. No scan was performed.");
+            }
+          });
+      }
+
+      function startSampling() {
+        if (!activeStream || !video.srcObject) {
+          setMode("lens unavailable");
+          stopAndReset("no active camera stream");
+          return;
+        }
+
+        var durationSeconds = parseInt(durationSelect.value, 10);
+        var totalFrames = durationSeconds * FPS;
+        var tick = 0;
+
+        signal = [];
+        luminance = [];
+        sampling = true;
+
+        view.classList.add("scanning");
+        setStartButtonState();
+        setHud("processing temporary visual frames — hold still if comfortable…");
+
+        scanInterval = setInterval(function () {
+          try {
+            offscreenContext.drawImage(
+              video,
+              0,
+              0,
+              offscreenCanvas.width,
+              offscreenCanvas.height
+            );
+          } catch (error) {
+            failScan();
+            return;
+          }
+
+          var pixels = offscreenContext.getImageData(
+            0,
+            0,
+            offscreenCanvas.width,
+            offscreenCanvas.height
+          ).data;
+
+          var centerGreen = 0;
+          var centerCount = 0;
+          var overallLight = 0;
+          var overallCount = 0;
+
+          for (var y = 0; y < 128; y += 1) {
+            for (var x = 0; x < 128; x += 1) {
+              var pixelIndex = (y * 128 + x) * 4;
+              var red = pixels[pixelIndex];
+              var green = pixels[pixelIndex + 1];
+              var blue = pixels[pixelIndex + 2];
+
+              overallLight += (0.299 * red) + (0.587 * green) + (0.114 * blue);
+              overallCount += 1;
+
+              if (y >= 16 && y <= 52 && x >= 44 && x <= 84) {
+                centerGreen += green;
+                centerCount += 1;
+              }
+            }
+          }
+
+          signal.push(centerCount ? centerGreen / centerCount : 0);
+          luminance.push(overallCount ? overallLight / overallCount : 0);
+
+          tick += 1;
+          drawWaveform();
+
+          if (tick === Math.floor(totalFrames / 3)) {
+            setHud("forming a fictional pattern from frame changes…");
+          }
+
+          if (tick >= totalFrames) {
+            clearInterval(scanInterval);
+            scanInterval = null;
+            sampling = false;
+            analyzeFictionalSignal();
+          }
+        }, 1000 / FPS);
+      }
+
+      function failScan() {
+        stopAndReset("the temporary visual thread ended");
+        setMode("scan interrupted");
+        elderSay("The lens lost the thread. No reading was kept.");
+      }
+
+      function analyzeFictionalSignal() {
+        view.classList.remove("scanning");
+
+        var sampleCount = signal.length;
+
+        if (sampleCount < FPS * 4) {
+          failScan();
+          return;
+        }
+
+        var signalMean = signal.reduce(function (sum, value) {
+          return sum + value;
+        }, 0) / sampleCount;
+
+        var centered = signal.map(function (value) {
+          return value - signalMean;
+        });
+
+        var smoothingWindow = FPS;
+
+        var detrended = centered.map(function (_, index) {
+          var sum = 0;
+          var count = 0;
+
+          for (
+            var neighbor = Math.max(0, index - smoothingWindow);
+            neighbor <= Math.min(sampleCount - 1, index + smoothingWindow);
+            neighbor += 1
+          ) {
+            sum += centered[neighbor];
+            count += 1;
+          }
+
+          return centered[index] - (sum / count);
+        });
+
+        var detrendedMean = detrended.reduce(function (sum, value) {
+          return sum + value;
+        }, 0) / sampleCount;
+
+        var standardDeviation = Math.sqrt(
+          detrended.reduce(function (sum, value) {
+            return sum + Math.pow(value - detrendedMean, 2);
+          }, 0) / sampleCount
+        );
+
+        var refractoryFrames = Math.floor(FPS * 0.3);
+        var peaks = [];
+
+        for (var index = 2; index < sampleCount - 2; index += 1) {
+          var isLocalPeak =
+            detrended[index] > standardDeviation * 0.6 &&
+            detrended[index] >= detrended[index - 1] &&
+            detrended[index] >= detrended[index + 1] &&
+            detrended[index] > detrended[index - 2] &&
+            detrended[index] >= detrended[index + 2];
+
+          if (
+            isLocalPeak &&
+            (
+              peaks.length === 0 ||
+              index - peaks[peaks.length - 1] >= refractoryFrames
+            )
+          ) {
+            peaks.push(index);
+          }
+        }
+
+        var motion = 0;
+
+        for (var frame = 1; frame < luminance.length; frame += 1) {
+          motion += Math.abs(luminance[frame] - luminance[frame - 1]);
+        }
+
+        motion /= Math.max(1, luminance.length - 1);
+
+        var minimumExpectedPeaks = Math.max(
+          4,
+          Math.floor(sampleCount / FPS / 4)
+        );
+
+        var insufficientPattern = peaks.length < minimumExpectedPeaks;
+        var intervals = [];
+
+        if (!insufficientPattern) {
+          for (var peakIndex = 1; peakIndex < peaks.length; peakIndex += 1) {
+            intervals.push((peaks[peakIndex] - peaks[peakIndex - 1]) * (1000 / FPS));
+          }
+        }
+
+        var rhythmSignal = null;
+        var variationSignal = null;
+
+        if (intervals.length >= 3) {
+          var sortedIntervals = intervals.slice().sort(function (a, b) {
+            return a - b;
+          });
+
+          var medianInterval = sortedIntervals[
+            Math.floor(sortedIntervals.length / 2)
+          ];
+
+          intervals = intervals.filter(function (value) {
+            return Math.abs(value - medianInterval) < medianInterval * 0.35;
+          });
+        }
+
+        if (intervals.length >= 3) {
+          rhythmSignal = Math.round(
+            60000 / (
+              intervals.reduce(function (sum, value) {
+                return sum + value;
+              }, 0) / intervals.length
+            )
+          );
+
+          var differenceSquares = 0;
+
+          for (var intervalIndex = 1; intervalIndex < intervals.length; intervalIndex += 1) {
+            differenceSquares += Math.pow(
+              intervals[intervalIndex] - intervals[intervalIndex - 1],
+              2
+            );
+          }
+
+          variationSignal = Math.round(
+            Math.sqrt(differenceSquares / (intervals.length - 1))
+          );
+        }
+
+        var rhythmExcess =
+          rhythmSignal !== null && rhythmSignal > 180
+            ? rhythmSignal - 180
+            : rhythmSignal !== null && rhythmSignal < 40
+              ? 40 - rhythmSignal
+              : 0;
+
+        var variationExcess =
+          variationSignal !== null && variationSignal >= 300
+            ? variationSignal - 300
+            : 0;
+
+        var unresolvedPatternExcess = insufficientPattern ? 120 : 0;
+
+        var unusualReading =
+          insufficientPattern ||
+          rhythmExcess > 0 ||
+          variationExcess > 0;
+
+        var rhythmTerm =
+          rhythmSignal !== null
+            ? Math.round(Math.max(2, Math.min(25, (120 - rhythmSignal) * 0.35)))
+            : 0;
+
+        var variationTerm =
+          variationSignal !== null
+            ? Math.max(0, Math.min(20, Math.round(variationSignal / 8)))
+            : 0;
+
+        var stillnessTerm = Math.max(
+          0,
+          Math.min(20, Math.round(20 - motion * 1.5))
+        );
+
+        var baseReading = 2 + rhythmTerm + variationTerm + stillnessTerm;
+
+        renderFictionalResult({
+          insufficientPattern: insufficientPattern,
+          rhythmSignal: rhythmSignal,
+          variationSignal: variationSignal,
+          rhythmExcess: rhythmExcess,
+          variationExcess: variationExcess,
+          unresolvedPatternExcess: unresolvedPatternExcess,
+          unusualReading: unusualReading,
+          rhythmTerm: rhythmTerm,
+          variationTerm: variationTerm,
+          stillnessTerm: stillnessTerm,
+          motion: motion,
+          baseReading: baseReading
+        });
+      }
+
+      function renderFictionalResult(result) {
+        var results = $("results");
+        results.innerHTML = "";
+
+        var firstHeading = document.createElement("div");
+        firstHeading.className = "sec";
+        firstHeading.textContent = "What the fictional lens observed";
+        results.appendChild(firstHeading);
+
+        if (result.insufficientPattern) {
+          results.appendChild(
+            makeLine(
+              "visual rhythm pattern",
+              "too faint for this fictional chart",
+              null,
+              "low signal"
+            )
+          );
+
+          results.appendChild(
+            makeLine(
+              "frame variation pattern",
+              "too faint for this fictional chart",
+              null,
+              "low signal"
+            )
+          );
+        } else {
+          results.appendChild(
+            makeLine(
+              "visual rhythm signal",
+              result.rhythmSignal + " game units",
+              "experimental",
+              result.rhythmExcess ? "outside chart" : null
+            )
+          );
+
+          results.appendChild(
+            makeLine(
+              "signal variation",
+              result.variationSignal + " game units",
+              "experimental",
+              result.variationExcess ? "outside chart" : null
+            )
+          );
+        }
+
+        results.appendChild(
+          makeLine(
+            "frame stillness signal",
+            result.motion.toFixed(1),
+            "visual estimate"
+          )
+        );
+
+        var secondHeading = document.createElement("div");
+        secondHeading.className = "sec";
+        secondHeading.textContent = "Fictional scouter sum (mortal scale)";
+        results.appendChild(secondHeading);
+
+        results.appendChild(
+          makeLine(
+            "rhythm-signal term",
+            result.insufficientPattern ? "held at 0" : "+" + result.rhythmTerm,
+            null,
+            result.insufficientPattern ? "reconciled below" : null
+          )
+        );
+
+        results.appendChild(
+          makeLine(
+            "signal-variation term",
+            result.insufficientPattern ? "held at 0" : "+" + result.variationTerm,
+            null,
+            result.insufficientPattern ? "reconciled below" : null
+          )
+        );
+
+        results.appendChild(
+          makeLine("frame-stillness term", "+" + result.stillnessTerm)
+        );
+
+        results.appendChild(
+          makeLine("Namekian narrative constant", "+2")
+        );
+
+        setHud("fictional reading complete");
+
+        countUp($("pl"), result.baseReading, function () {
+          $("plnote").textContent = result.unusualReading
+            ? "fictional chart strained — reconciling"
+            : "within the fictional mortal band";
+
+          if (result.unusualReading) {
+            var excess =
+              result.rhythmExcess +
+              result.variationExcess +
+              result.unresolvedPatternExcess;
+
+            var amplification = 1 + Math.log(1 + excess);
+            var trueReading = Math.min(
+              2000000,
+              Math.round(result.baseReading * amplification + excess)
+            );
+
+            var inputParts = [];
+
+            if (result.rhythmExcess) {
+              inputParts.push("rhythm excess " + result.rhythmExcess);
+            }
+
+            if (result.variationExcess) {
+              inputParts.push("variation excess " + result.variationExcess);
+            }
+
+            if (result.unresolvedPatternExcess) {
+              inputParts.push("unresolved visual pattern (game estimate 120)");
+            }
+
+            var trueBox = $("truebox");
+            trueBox.className = "truebox";
+            trueBox.innerHTML = "";
+
+            var heading = document.createElement("div");
+            heading.className = "sec";
+            heading.style.marginTop = "0";
+            heading.textContent = "True reading — fictional anomaly reconciled";
+
+            var row = document.createElement("div");
+            row.className = "row";
+
+            var number = document.createElement("div");
+            number.className = "pl";
+            number.id = "truepl";
+            number.textContent = "0";
+
+            var formula = document.createElement("div");
+            formula.className = "note";
+            formula.textContent =
+              result.baseReading +
+              " × (1 + ln(1 + " +
+              excess +
+              ")) + " +
+              excess;
+
+            var inputs = document.createElement("div");
+            inputs.className = "note";
+            inputs.style.marginTop = "4px";
+            inputs.textContent = "Fictional inputs: " + inputParts.join(" · ");
+
+            row.appendChild(number);
+            row.appendChild(formula);
+
+            trueBox.appendChild(heading);
+            trueBox.appendChild(row);
+            trueBox.appendChild(inputs);
+
+            countUp(number, trueReading, function () {
+              elderSay(
+                "The chart was never the ceiling—only the paper. This fictional reading carries " +
+                trueReading.toLocaleString() +
+                " and does not tremble."
+              );
+
+              saveHistory(
+                result.baseReading,
+                trueReading,
+                result.rhythmSignal,
+                result.variationSignal
+              );
+
+              finishScan();
+            });
+          } else {
+            elderSay(
+              result.baseReading >= 60
+                ? "Strong, and steady with it. The quiet strength outlasts the loud."
+                : "A gentle fictional reading. Small drums have carried entire villages through long nights."
+            );
+
+            saveHistory(
+              result.baseReading,
+              result.baseReading,
+              result.rhythmSignal,
+              result.variationSignal
+            );
+
+            finishScan();
+          }
+        });
+      }
+
+      function finishScan() {
+        sampling = false;
+        stopCamera();
+        setMode("at rest");
+        setStartButtonState();
+      }
+
+      function countUp(element, target, done) {
+        var start = performance.now();
+        var duration = 1000;
+
+        function frame(now) {
+          var progress = Math.min(1, (now - start) / duration);
+          var eased = 1 - Math.pow(1 - progress, 3);
+
+          element.textContent = Math.round(target * eased);
+
+          if (progress < 1) {
+            requestAnimationFrame(frame);
+          } else if (done) {
+            done();
+          }
+        }
+
+        requestAnimationFrame(frame);
+      }
+
+      function saveHistory(baseReading, trueReading, rhythmSignal, variationSignal) {
+        if (!saveHistory.checked) {
+          return;
+        }
+
+        try {
+          var history = JSON.parse(
+            localStorage.getItem("scouter_history") || "[]"
+          );
+
+          history.push({
+            t: Date.now(),
+            baseReading: baseReading,
+            trueReading: trueReading,
+            rhythmSignal: rhythmSignal,
+            variationSignal: variationSignal
+          });
+
+          localStorage.setItem(
+            "scouter_history",
+            JSON.stringify(history.slice(-50))
+          );
+        } catch (error) {
+          /* Optional history should never break the fictional scan. */
+        }
+      }
+
+      function loadHistoryPreference() {
+        try {
+          saveHistory.checked =
+            localStorage.getItem("scouter_history_enabled") === "true";
+        } catch (error) {
+          saveHistory.checked = false;
+        }
+      }
+
+      function saveHistoryPreference() {
+        try {
+          localStorage.setItem(
+            "scouter_history_enabled",
+            String(saveHistory.checked)
+          );
+        } catch (error) {
+          /* The app can work without local storage. */
+        }
+      }
+
+      function showHistory() {
+        var historyElement = $("history");
+
+        if (historyElement.style.display === "block") {
+          historyElement.style.display = "none";
+          return;
+        }
+
+        var history = [];
+
+        try {
+          history = JSON.parse(
+            localStorage.getItem("scouter_history") || "[]"
+          );
+        } catch (error) {
+          history = [];
+        }
+
+        historyElement.innerHTML = "";
+
+        var heading = document.createElement("div");
+        heading.className = "sec";
+        heading.style.marginTop = "8px";
+        heading.textContent = "Gero mode — local fictional record";
+        historyElement.appendChild(heading);
+
+        if (!history.length) {
+          var empty = document.createElement("div");
+          empty.style.padding = "8px 0";
+          empty.textContent =
+            "No saved readings. History stays empty unless you opt in.";
+          historyElement.appendChild(empty);
+        } else {
+          history.slice(-10).reverse().forEach(function (scan) {
+            var row = document.createElement("div");
+            row.className = "histline";
+
+            var left = document.createElement("span");
+            var right = document.createElement("span");
+            var date = new Date(scan.t);
+
+            left.textContent = date.toLocaleString();
+
+            var output =
+              "base " +
+              scan.baseReading +
+              (
+                scan.trueReading !== scan.baseReading
+                  ? " · true " + scan.trueReading
+                  : ""
+              ) +
+              (
+                scan.rhythmSignal
+                  ? " · rhythm " + scan.rhythmSignal
+                  : ""
+              );
+
+            right.textContent = output;
+
+            row.appendChild(left);
+            row.appendChild(right);
+            historyElement.appendChild(row);
+          });
+        }
+
+        historyElement.style.display = "block";
+      }
+
+      function clearHistory() {
+        var approved = window.confirm(
+          "Delete all saved fictional scouter history from this browser?"
+        );
+
+        if (!approved) {
+          return;
+        }
+
+        try {
+          localStorage.removeItem("scouter_history");
+        } catch (error) {
+          /* Nothing else is needed if storage is unavailable. */
+        }
+
+        $("history").innerHTML = "";
+        $("history").style.display = "none";
+      }
+
+      cameraConsent.addEventListener("change", setStartButtonState);
+
+      saveHistory.addEventListener("change", saveHistoryPreference);
+
+      goButton.addEventListener("click", beginScan);
+
+      $("historyBtn").addEventListener("click", showHistory);
+
+      $("clearHistoryBtn").addEventListener("click", clearHistory);
+
+      window.addEventListener("pagehide", function () {
+        sampling = false;
+        stopCamera();
+      });
+
+      document.addEventListener("visibilitychange", function () {
+        if (document.hidden && (sampling || activeStream)) {
+          sampling = false;
+          stopCamera();
+
+          setMode("scan paused");
+          $("plnote").textContent = "camera closed for privacy";
+          setStartButtonState();
+        }
+      });
+
+      loadHistoryPreference();
+      setStartButtonState();
+    })();
+  </script>
+</body>
+</html>
