@@ -7,32 +7,32 @@
   <title>Namekian Elder Scouter — Fictional Local Scan</title>
 
   <style>
-  .app-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0 0 16px;
-}
+    .app-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 16px;
+    }
 
-.app-links a {
-  padding: 8px 11px;
-  border: 1px solid rgba(114, 255, 175, 0.55);
-  border-radius: 999px;
-  color: #72ffaf;
-  background: rgba(6, 19, 15, 0.82);
-  font-size: 0.8rem;
-  font-weight: 800;
-  text-decoration: none;
-}
+    .app-links a {
+      padding: 8px 11px;
+      border: 1px solid rgba(114, 255, 175, 0.55);
+      border-radius: 999px;
+      color: #72ffaf;
+      background: rgba(6, 19, 15, 0.82);
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-decoration: none;
+    }
 
-.app-links a:hover,
-.app-links a:focus-visible {
-  outline: 3px solid #ffe878;
-  outline-offset: 3px;
-  color: #06100b;
-  background: #d0ff68;
-}
-  <style>
+    .app-links a:hover,
+    .app-links a:focus-visible {
+      outline: 3px solid #ffe878;
+      outline-offset: 3px;
+      color: #06100b;
+      background: #d0ff68;
+    }
+
     :root {
       --ink: #1a1a1a;
       --paper: #f7f7f5;
@@ -392,49 +392,24 @@
         text-align: left;
       }
     }
-    .app-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0 0 16px;
-}
-
-.app-links a {
-  padding: 8px 11px;
-  border: 1px solid rgba(114, 255, 175, 0.55);
-  border-radius: 999px;
-  color: #72ffaf;
-  background: rgba(6, 19, 15, 0.82);
-  font-size: 0.8rem;
-  font-weight: 800;
-  text-decoration: none;
-}
-
-.app-links a:hover,
-.app-links a:focus-visible {
-  outline: 3px solid #ffe878;
-  outline-offset: 3px;
-  color: #06100b;
-  background: #d0ff68;
-}
   </style>
 </head>
 
 <body>
   <nav class="app-links" aria-label="Project navigation">
-  <a href="https://tyronepowww-gif.github.io/Console-Scouter/">
-    Console Scouter
-  </a>
+    <a href="https://tyronepowww-gif.github.io/Console-Scouter/">
+      Console Scouter
+    </a>
 
-  <a href="https://tyronepowww-gif.github.io/Z-Console/">
-    Z Console
-  </a>
+    <a href="https://tyronepowww-gif.github.io/Z-Console/">
+      Z Console
+    </a>
 
-  <a href="https://tyronepowww-gif.github.io/Z-Orbit/">
-    Z Orbit
-  </a>
-</nav>
-<body>
+    <a href="https://tyronepowww-gif.github.io/Z-Orbit/">
+      Z Orbit
+    </a>
+  </nav>
+
   <main class="wrap">
     <header>
       <h1>Namekian elder scouter</h1>
@@ -501,7 +476,7 @@
 
       <div class="controls">
         <button class="btn" id="go" type="button" disabled>
-          Commune with the lens
+          Scan
         </button>
 
         <select id="dur" aria-label="Scan duration">
@@ -551,7 +526,7 @@
       var scanInterval = null;
 
       var cameraConsent = $("cameraConsent");
-      var saveHistory = $("saveHistory");
+      var saveHistoryCheckbox = $("saveHistory");
       var goButton = $("go");
       var durationSelect = $("dur");
 
@@ -562,6 +537,27 @@
       var offscreenContext = offscreenCanvas.getContext("2d", {
         willReadFrequently: true
       });
+
+      // General population comparison bands for the fictional "mortal scale"
+      // reading. These are broad, well-known exertion-level categories, not
+      // measurements of the person using the scanner.
+      var EXERTION_TIERS = [
+        { max: 25, label: "resting / untrained range" },
+        { max: 40, label: "light daily activity range" },
+        { max: 60, label: "dedicated amateur activity range" },
+        { max: 75, label: "serious competitor activity range" },
+        { max: 100, label: "elite / professional activity range" },
+        { max: Infinity, label: "rare theoretical-ceiling range" }
+      ];
+
+      function describeExertionTier(value) {
+        for (var index = 0; index < EXERTION_TIERS.length; index += 1) {
+          if (value <= EXERTION_TIERS[index].max) {
+            return EXERTION_TIERS[index].label;
+          }
+        }
+        return EXERTION_TIERS[EXERTION_TIERS.length - 1].label;
+      }
 
       function setHud(text) {
         $("hudstat").textContent = text;
@@ -1073,6 +1069,14 @@
           )
         );
 
+        results.appendChild(
+          makeLine(
+            "comparison band",
+            describeExertionTier(result.baseReading),
+            "general population reference, not a measurement of you"
+          )
+        );
+
         var secondHeading = document.createElement("div");
         secondHeading.className = "sec";
         secondHeading.textContent = "Fictional scouter sum (mortal scale)";
@@ -1109,7 +1113,9 @@
         countUp($("pl"), result.baseReading, function () {
           $("plnote").textContent = result.unusualReading
             ? "fictional chart strained — reconciling"
-            : "within the fictional mortal band";
+            : "within the fictional mortal band (" +
+              describeExertionTier(result.baseReading) +
+              ")";
 
           if (result.unusualReading) {
             var excess =
@@ -1182,7 +1188,7 @@
                 " and does not tremble."
               );
 
-              saveHistory(
+              recordHistory(
                 result.baseReading,
                 trueReading,
                 result.rhythmSignal,
@@ -1198,7 +1204,7 @@
                 : "A gentle fictional reading. Small drums have carried entire villages through long nights."
             );
 
-            saveHistory(
+            recordHistory(
               result.baseReading,
               result.baseReading,
               result.rhythmSignal,
@@ -1237,8 +1243,8 @@
         requestAnimationFrame(frame);
       }
 
-      function saveHistory(baseReading, trueReading, rhythmSignal, variationSignal) {
-        if (!saveHistory.checked) {
+      function recordHistory(baseReading, trueReading, rhythmSignal, variationSignal) {
+        if (!saveHistoryCheckbox.checked) {
           return;
         }
 
@@ -1266,10 +1272,10 @@
 
       function loadHistoryPreference() {
         try {
-          saveHistory.checked =
+          saveHistoryCheckbox.checked =
             localStorage.getItem("scouter_history_enabled") === "true";
         } catch (error) {
-          saveHistory.checked = false;
+          saveHistoryCheckbox.checked = false;
         }
       }
 
@@ -1277,7 +1283,7 @@
         try {
           localStorage.setItem(
             "scouter_history_enabled",
-            String(saveHistory.checked)
+            String(saveHistoryCheckbox.checked)
           );
         } catch (error) {
           /* The app can work without local storage. */
@@ -1373,7 +1379,7 @@
 
       cameraConsent.addEventListener("change", setStartButtonState);
 
-      saveHistory.addEventListener("change", saveHistoryPreference);
+      saveHistoryCheckbox.addEventListener("change", saveHistoryPreference);
 
       goButton.addEventListener("click", beginScan);
 
